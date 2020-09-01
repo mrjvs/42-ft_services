@@ -1,0 +1,74 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: telegraf-account
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: telegraf
+spec:
+  selector:
+    app: telegraf
+  clusterIP: None
+---
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: ClusterRole
+metadata:
+  name: cr-telegraf
+rules:
+- apiGroups: ["metrics.k8s.io"]
+  resources: ["nodes"]
+  verbs: ["get", "list", "watch"]
+- apiGroups: [""]
+  resources: ["nodes/proxy","nodes/stats"]
+  verbs: ["get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: ClusterRoleBinding
+metadata:
+  name: crb-telegraf
+subjects:
+- kind: ServiceAccount
+  name: telegraf-account
+  namespace: default
+roleRef:
+  kind: ClusterRole
+  name: cr-telegraf
+  apiGroup: "rbac.authorization.k8s.io"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: telegraf
+  labels:
+    app: telegraf
+spec:
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: telegraf
+  template:
+    metadata:
+      labels:
+        app: telegraf
+    spec:
+      serviceAccountName: telegraf-account
+      initContainers:
+        - name: init-wait
+          image: alpine
+          command: ["sh", "-c", "for i in $(seq 1 300); do nc -zvw1 influx 8086 && exit 0 || sleep 3; done; exit 1"]
+      containers:
+        - name: telegraf
+          imagePullPolicy: Never
+          image: telegraf
+          env:
+            - name: DB_HOSTNAME
+              value: influx
+            - name: DB_PORT
+              value: "8086"
+            - name: NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName

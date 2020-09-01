@@ -1,0 +1,37 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: influx
+spec:
+  selector:
+    app: influx
+  clusterIP: None
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: influx
+  labels:
+    app: influx
+spec:
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: influx
+  template:
+    metadata:
+      labels:
+        app: influx
+    spec:
+      containers:
+        - name: influx
+          imagePullPolicy: Never
+          image: influx
+          volumeMounts:
+            - name: influx-volume
+              mountPath: /var/lib/influxdb
+      volumes:
+        - name: influx-volume
+          persistentVolumeClaim:
+            claimName: influx-storage

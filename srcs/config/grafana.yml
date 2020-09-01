@@ -1,0 +1,54 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: grafana
+spec:
+  type: LoadBalancer
+  selector:
+    app: grafana
+  ports:
+  - port: 3000
+    targetPort: 3000
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: grafana
+  labels:
+    app: grafana
+spec:
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: grafana
+  template:
+    metadata:
+      labels:
+        app: grafana
+    spec:
+      containers:
+        - name: grafana
+          imagePullPolicy: Never
+          image: grafana
+          ports:
+            - containerPort: 3000
+          env:
+            - name: ADMIN_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: grafana
+                  key: admin
+            - name: INFLUXDB_HOST
+              value: influx
+            - name: INFLUXDB_PORT
+              value: "8086"
+            - name: PODS
+              value: FTP-server,ftps,ftps;Grafana,grafana,grafana;Influx-database,influx,influx;MySQL-database,mysql,mysql;Webserver,nginx,nginx;PHPMyAdmin,pma,pma;Telegraf,telegraf,telegraf;Wordpress,wordpress,wordpress
+          volumeMounts:
+            - name: grafana-volume
+              mountPath: /grafana/data
+      volumes:
+        - name: grafana-volume
+          persistentVolumeClaim:
+            claimName: grafana-storage

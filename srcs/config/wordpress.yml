@@ -1,0 +1,81 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: wordpress
+spec:
+  type: LoadBalancer
+  selector:
+    app: wordpress
+  ports:
+  - port: 5050
+    protocol: TCP
+    targetPort: 5050
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: wordpress
+  labels:
+    app: wordpress
+spec:
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: wordpress
+  template:
+    metadata:
+      labels:
+        app: wordpress
+    spec:
+      initContainers:
+        - name: init-wait
+          image: alpine
+          command: ["sh", "-c", "for i in $(seq 1 300); do nc -zvw1 mysql 3306 && exit 0 || sleep 3; done; exit 1"]
+      containers:
+        - name: wordpress
+          imagePullPolicy: Never
+          image: wordpress
+          ports:
+          - containerPort: 5050
+          volumeMounts:
+            - name: wordpress-volume
+              mountPath: /var/www
+          env:
+            - name: MYSQL_HOST
+              value: mysql
+            - name: MYSQL_DB
+              value: wordpress
+            - name: MYSQL_USER
+              value: wordpress
+            - name: MYSQL_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: wpsqlpass
+                  key: wpsqlpass
+            - name: WP_SALT
+              valueFrom:
+                secretKeyRef:
+                  name: wpsalt
+                  key: wpsalt
+            - name: WP_ROOT
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.hostIP
+            - name: WP_TITLE
+              value: wordpress site
+            - name: WP_USER
+              value: mrjvs
+            - name: WP_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: wppass
+                  key: wppass
+            - name: WP_EMAIL
+              value: jellevs@gmail.com
+            - name: USERS
+              value: user1,user1@example.com,helloworld1;user2,user2@example.com,helloworld2
+      volumes:
+        - name: wordpress-volume
+          persistentVolumeClaim:
+            claimName: wordpress-storage

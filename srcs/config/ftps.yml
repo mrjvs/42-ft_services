@@ -1,0 +1,65 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: ftps
+spec:
+  type: LoadBalancer
+  selector:
+    app: ftps
+  ports:
+  - port: 21
+    protocol: TCP
+    targetPort: 21
+    name: ftp
+  - port: 990
+    protocol: TCP
+    targetPort: 990
+    name: ftps
+  - port: 21000
+    protocol: TCP
+    targetPort: 21000
+    name: ftps-passive-1
+  - port: 21001
+    protocol: TCP
+    targetPort: 21001
+    name: ftps-passive-2
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ftps
+  labels:
+    app: ftps
+spec:
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: ftps
+  template:
+    metadata:
+      labels:
+        app: ftps
+    spec:
+      containers:
+        - name: ftps
+          imagePullPolicy: Never
+          image: ftps
+          ports:
+          - containerPort: 21
+          - containerPort: 990
+          - containerPort: 21000
+          - containerPort: 21001
+          env:
+            - name: PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: passwords
+                  key: root   
+          volumeMounts:
+            - name: ftps-volume
+              mountPath: /usr/share/ftps
+      volumes:
+        - name: ftps-volume
+          persistentVolumeClaim:
+            claimName: ftps-storage
