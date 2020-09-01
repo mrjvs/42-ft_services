@@ -13,7 +13,7 @@ kubectl apply -f ../config/grafana.yml
 
 # setup wordpress siteurl
 STAT=$(kubectl get services | grep "^wordpress" | awk 'NR == 1 {print $4}')
-while [[ -z $STAT || $STAT == "<none>" ]]; do
+while [[ -z $STAT || $STAT == "<pending>" ]]; do
     sleep 10
     echo "Rechecking wordpress ip"
     STAT=$(kubectl get services | grep "^wordpress" | awk 'NR == 1 {print $4}')
@@ -29,7 +29,7 @@ echo "Set wordpress url successfully! ";
 
 # setup ftps ip
 STAT=$(kubectl get services | grep "^ftps" | awk 'NR == 1 {print $4}')
-while [[ -z $STAT || $STAT == "<none>" ]]; do
+while [[ -z $STAT || $STAT == "<pending>" ]]; do
     sleep 10
     echo "Rechecking ftps ip"
     STAT=$(kubectl get services | grep "^ftps" | awk 'NR == 1 {print $4}')
