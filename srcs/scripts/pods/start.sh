@@ -24,7 +24,9 @@ while [[ $(kubectl exec $(kubectl get pods | grep "^wordpress" | awk 'NR == 1 {p
     echo "Failed to set url, retrying in 10 ";
     sleep 10
 done;
+STAT=$(kubectl get services | grep "^wordpress" | awk 'NR == 1 {print $4}')
 kubectl exec $(kubectl get pods | grep "^wordpress" | awk 'NR == 1 {print $1}') -- sh -c "wp option update home 'http://$STAT:5050' --path='/var/www/wordpress' --allow-root"
+kubectl exec $(kubectl get pods | grep "^wordpress" | awk 'NR == 1 {print $1}') -- sh -c "wp option update siteurl 'http://$STAT:5050' --path='/var/www/wordpress' --allow-root"
 echo "Set wordpress url successfully! ";
 
 # setup ftps ip
