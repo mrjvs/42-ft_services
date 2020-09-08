@@ -10,8 +10,8 @@ fi
 cd /var/www/wordpress
 
 # first boot
-if [ -f "/var/www/wordpress/wp-admin/install.php" ]; then
-    echo "install script present, installing wordpress"
+if [ $(wp core is-installed --allow-root; echo $?) != "0"  ]; then
+    echo "wordpress not installed, installing wordpress"
 
     # creating config
     wp config create --dbname="$MYSQL_DB" --dbhost="$MYSQL_HOST" --dbuser="$MYSQL_USER" --dbpass="$MYSQL_PASS" --allow-root
@@ -31,10 +31,6 @@ if [ -f "/var/www/wordpress/wp-admin/install.php" ]; then
 
         wp user create "$USERNAME" "$EMAIL" --user_pass="$PASS" --allow-root
     done
-
-    # update siteurl
-    wp option update siteurl "http://$WP_ROOT:5050" --allow-root
-    wp option update home "http://$WP_ROOT:5050" --allow-root
 fi
 
 cd /etc
