@@ -1,4 +1,5 @@
 # incorrect way to use k8s
+**important note: DO NOT COPY PASTE ENTIRE PROJECT**
 
 todo:
 - [X] metallb
